@@ -1,16 +1,53 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUserStore } from '@/stores/userStore';
 
+// Cookie helpers
+const getCookie = (name: string): string | null => {
+    if (typeof document === 'undefined') return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+    return null;
+};
+
+const setCookie = (name: string, value: string, days: number) => {
+    const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+    document.cookie = `${name}=${value}; expires=${expires}; path=/`;
+};
+
 export default function Home() {
     const router = useRouter();
-    const { setUser } = useUserStore();
+    const { setUser, isAuthenticated, checkAuth } = useUserStore();
     const [username, setUsername] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [checking, setChecking] = useState(true);
+
+    // Check if already authenticated on mount
+    useEffect(() => {
+        const init = async () => {
+            await checkAuth();
+            setChecking(false);
+        };
+        init();
+
+        // Load saved nickname from cookie
+        const savedNickname = getCookie('player_nickname');
+        if (savedNickname) {
+            setUsername(savedNickname);
+        }
+    }, [checkAuth]);
+
+    // Redirect to lobby if already authenticated
+    useEffect(() => {
+        if (!checking && isAuthenticated) {
+            router.push('/lobby');
+        }
+    }, [checking, isAuthenticated, router]);
 
     const handleQuickPlay = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,6 +66,8 @@ export default function Home() {
             const data = await res.json();
 
             if (data.success) {
+                // Save nickname to cookie for 7 days
+                setCookie('player_nickname', data.user.username, 7);
                 setUser(data.user);
                 router.push('/lobby');
             } else {
@@ -40,6 +79,15 @@ export default function Home() {
             setLoading(false);
         }
     };
+
+    // Show loading while checking auth
+    if (checking) {
+        return (
+            <main className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin h-10 w-10 border-4 border-primary-500 border-t-transparent rounded-full" />
+            </main>
+        );
+    }
 
     return (
         <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8 sm:p-8">

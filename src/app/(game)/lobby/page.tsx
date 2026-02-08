@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/stores/userStore';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
+// Cookie helper
+const setCookie = (name: string, value: string, days: number) => {
+    const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+    document.cookie = `${name}=${value}; expires=${expires}; path=/`;
+};
+
 interface Room {
     id: string;
     code: string;
@@ -18,13 +24,19 @@ interface Room {
 
 export default function LobbyPage() {
     const router = useRouter();
-    const { user, logout } = useUserStore();
+    const { user, logout, setUser } = useUserStore();
     const [rooms, setRooms] = useState<Room[]>([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [joinCode, setJoinCode] = useState('');
     const [joining, setJoining] = useState(false);
     const [error, setError] = useState('');
+
+    // Nickname editing state
+    const [isEditingNickname, setIsEditingNickname] = useState(false);
+    const [newNickname, setNewNickname] = useState('');
+    const [nicknameError, setNicknameError] = useState('');
+    const [savingNickname, setSavingNickname] = useState(false);
 
     useEffect(() => {
         fetchRooms();
@@ -86,6 +98,47 @@ export default function LobbyPage() {
         }
     };
 
+    const handleNicknameChange = async () => {
+        if (!newNickname.trim() || newNickname.trim().length < 2) {
+            setNicknameError('Nickname must be at least 2 characters');
+            return;
+        }
+
+        setSavingNickname(true);
+        setNicknameError('');
+
+        try {
+            // Logout and re-login with new nickname
+            await fetch('/api/auth/logout', { method: 'POST' });
+
+            const res = await fetch('/api/auth/guest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: newNickname.trim() }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                setCookie('player_nickname', data.user.username, 7);
+                setUser(data.user);
+                setIsEditingNickname(false);
+            } else {
+                setNicknameError(data.error || 'Failed to change nickname');
+            }
+        } catch (error) {
+            setNicknameError('Failed to change nickname');
+        } finally {
+            setSavingNickname(false);
+        }
+    };
+
+    const startEditingNickname = () => {
+        setNewNickname(user?.username || '');
+        setIsEditingNickname(true);
+        setNicknameError('');
+    };
+
     return (
         <ProtectedRoute>
             <main className="min-h-screen px-4 py-6 sm:p-8">
@@ -95,9 +148,51 @@ export default function LobbyPage() {
                         <h1 className="text-2xl sm:text-3xl font-bold text-white">
                             Game Lobby
                         </h1>
-                        <p className="text-slate-400 text-sm sm:text-base">
-                            Welcome, <span className="text-primary-400">{user?.username}</span>
-                        </p>
+                        <div className="text-slate-400 text-sm sm:text-base flex items-center gap-2">
+                            {isEditingNickname ? (
+                                <div className="flex flex-col gap-1">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={newNickname}
+                                            onChange={(e) => setNewNickname(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleNicknameChange()}
+                                            className="input-base py-1 px-2 text-sm w-32"
+                                            maxLength={20}
+                                            autoFocus
+                                            disabled={savingNickname}
+                                        />
+                                        <button
+                                            onClick={handleNicknameChange}
+                                            disabled={savingNickname}
+                                            className="btn btn-primary px-2 py-1 text-xs"
+                                        >
+                                            {savingNickname ? '...' : '✓'}
+                                        </button>
+                                        <button
+                                            onClick={() => setIsEditingNickname(false)}
+                                            className="btn btn-ghost px-2 py-1 text-xs"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                    {nicknameError && (
+                                        <span className="text-red-400 text-xs">{nicknameError}</span>
+                                    )}
+                                </div>
+                            ) : (
+                                <>
+                                    Welcome, <span className="text-primary-400">{user?.username}</span>
+                                    <button
+                                        onClick={startEditingNickname}
+                                        className="text-slate-500 hover:text-primary-400 transition-colors"
+                                        title="Change nickname"
+                                    >
+                                        ✏️
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
                     <div className="flex gap-3">
                         {user?.role === 'ADMIN' && (

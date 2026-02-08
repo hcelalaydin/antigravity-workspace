@@ -27,7 +27,10 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
         // Only redirect after auth check is complete
         if (!isChecking) {
             if (!isAuthenticated) {
-                router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+                // Regular players go to home page to enter nickname
+                // Admin routes redirect to admin login
+                const isAdminRoute = pathname.startsWith('/admin');
+                router.push(isAdminRoute ? `/login?redirect=${encodeURIComponent(pathname)}` : '/');
             } else if (requireAdmin && user?.role !== 'ADMIN') {
                 router.push('/lobby');
             }
