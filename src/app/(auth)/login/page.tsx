@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/stores/userStore';
+import { AnimatedBackground, Card, Button, Input } from '@/components/ui';
+import { motion } from 'framer-motion';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -30,98 +32,96 @@ export default function LoginPage() {
     };
 
     return (
-        <main className="min-h-screen flex items-center justify-center px-4 py-8">
-            {/* Background glow */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-1/3 left-1/3 w-64 h-64 sm:w-96 sm:h-96 bg-primary-600/20 rounded-full blur-3xl" />
-                <div className="absolute bottom-1/3 right-1/3 w-64 h-64 sm:w-96 sm:h-96 bg-primary-800/20 rounded-full blur-3xl" />
-            </div>
+        <main className="min-h-screen flex items-center justify-center px-4 py-8 relative">
+            <AnimatedBackground />
 
             {/* Login Card */}
-            <div className="relative z-10 w-full max-w-md">
-                <div className="glass rounded-2xl p-6 sm:p-8 shadow-glow">
+            <motion.div
+                className="relative z-10 w-full max-w-md"
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+            >
+                <Card variant="elevated" className="shadow-glow-lg">
                     {/* Header */}
-                    <div className="text-center mb-8">
-                        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary-300 to-primary-400 bg-clip-text text-transparent mb-2">
-                            Welcome Back
+                    <motion.div
+                        className="text-center mb-8"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                    >
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-3xl shadow-lg">
+                            🔐
+                        </div>
+                        <h1 className="text-2xl sm:text-3xl font-bold gradient-text mb-2">
+                            Admin Login
                         </h1>
-                        <p className="text-slate-400 text-sm sm:text-base">
-                            Enter the dream world
+                        <p className="text-slate-400 text-sm">
+                            Enter administration panel
                         </p>
-                    </div>
+                    </motion.div>
 
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-5">
                         {/* Error Message */}
                         {error && (
-                            <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-red-400 text-sm">
+                            <motion.div
+                                className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                            >
                                 {error}
-                            </div>
+                            </motion.div>
                         )}
 
-                        {/* Username */}
-                        <div>
-                            <label htmlFor="username" className="block text-sm font-medium text-slate-300 mb-2">
-                                Username
-                            </label>
-                            <input
-                                id="username"
-                                type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                className="input-base"
-                                placeholder="Enter your username"
-                                autoComplete="username"
-                                disabled={isLoggingIn}
-                            />
-                        </div>
+                        <Input
+                            label="Username"
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="Enter your username"
+                            autoComplete="username"
+                            disabled={isLoggingIn}
+                        />
 
-                        {/* Password */}
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
-                                Password
-                            </label>
-                            <input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="input-base"
-                                placeholder="Enter your password"
-                                autoComplete="current-password"
-                                disabled={isLoggingIn}
-                            />
-                        </div>
+                        <Input
+                            label="Password"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Enter your password"
+                            autoComplete="current-password"
+                            disabled={isLoggingIn}
+                        />
 
                         {/* Submit Button */}
-                        <button
+                        <Button
                             type="submit"
-                            disabled={isLoggingIn}
-                            className="btn btn-primary w-full py-3 text-base sm:text-lg mt-6"
+                            loading={isLoggingIn}
+                            variant="primary"
+                            size="lg"
+                            className="w-full mt-6"
                         >
-                            {isLoggingIn ? (
-                                <span className="flex items-center justify-center gap-2">
-                                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                    </svg>
-                                    Signing in...
-                                </span>
-                            ) : (
-                                'Sign In'
-                            )}
-                        </button>
+                            Sign In
+                        </Button>
                     </form>
 
                     {/* Back to Home */}
-                    <div className="mt-6 text-center">
-                        <a href="/" className="text-sm text-slate-400 hover:text-primary-400 transition-colors">
+                    <motion.div
+                        className="mt-6 text-center"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                    >
+                        <a
+                            href="/"
+                            className="text-sm text-slate-400 hover:text-primary-400 transition-colors inline-flex items-center gap-1"
+                        >
                             ← Back to home
                         </a>
-                    </div>
-                </div>
-            </div>
+                    </motion.div>
+                </Card>
+            </motion.div>
         </main>
     );
 }
-

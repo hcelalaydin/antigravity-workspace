@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/stores/userStore';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { AnimatedBackground, Card, Button, Input, Avatar } from '@/components/ui';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Cookie helper
 const setCookie = (name: string, value: string, days: number) => {
@@ -108,7 +110,6 @@ export default function LobbyPage() {
         setNicknameError('');
 
         try {
-            // Logout and re-login with new nickname
             await fetch('/api/auth/logout', { method: 'POST' });
 
             const res = await fetch('/api/auth/guest', {
@@ -141,180 +142,257 @@ export default function LobbyPage() {
 
     return (
         <ProtectedRoute>
-            <main className="min-h-screen px-4 py-6 sm:p-8">
-                {/* Header */}
-                <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                            Game Lobby
-                        </h1>
-                        <div className="text-slate-400 text-sm sm:text-base flex items-center gap-2">
-                            {isEditingNickname ? (
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="text"
-                                            value={newNickname}
-                                            onChange={(e) => setNewNickname(e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Enter' && handleNicknameChange()}
-                                            className="input-base py-1 px-2 text-sm w-32"
-                                            maxLength={20}
-                                            autoFocus
-                                            disabled={savingNickname}
-                                        />
+            <main className="min-h-screen px-4 py-6 sm:p-8 relative">
+                <AnimatedBackground />
+
+                <div className="relative z-10">
+                    {/* Header */}
+                    <motion.header
+                        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 max-w-5xl mx-auto"
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <div className="flex items-center gap-4">
+                            <Avatar name={user?.username || 'U'} size="lg" showRing />
+                            <div>
+                                <h1 className="text-2xl sm:text-3xl font-bold gradient-text">
+                                    Game Lobby
+                                </h1>
+                                {isEditingNickname ? (
+                                    <div className="flex flex-col gap-1 mt-1">
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                value={newNickname}
+                                                onChange={(e) => setNewNickname(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleNicknameChange()}
+                                                className="input-base py-1 px-2 text-sm w-32"
+                                                maxLength={20}
+                                                autoFocus
+                                                disabled={savingNickname}
+                                            />
+                                            <Button
+                                                onClick={handleNicknameChange}
+                                                disabled={savingNickname}
+                                                size="sm"
+                                                variant="primary"
+                                            >
+                                                {savingNickname ? '...' : '✓'}
+                                            </Button>
+                                            <Button
+                                                onClick={() => setIsEditingNickname(false)}
+                                                size="sm"
+                                                variant="ghost"
+                                            >
+                                                ✕
+                                            </Button>
+                                        </div>
+                                        {nicknameError && (
+                                            <span className="text-red-400 text-xs">{nicknameError}</span>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="text-slate-400 text-sm flex items-center gap-2">
+                                        <span>Playing as</span>
+                                        <span className="text-primary-400 font-semibold">{user?.username}</span>
                                         <button
-                                            onClick={handleNicknameChange}
-                                            disabled={savingNickname}
-                                            className="btn btn-primary px-2 py-1 text-xs"
+                                            onClick={startEditingNickname}
+                                            className="text-slate-500 hover:text-primary-400 transition-colors text-xs"
+                                            title="Change nickname"
                                         >
-                                            {savingNickname ? '...' : '✓'}
-                                        </button>
-                                        <button
-                                            onClick={() => setIsEditingNickname(false)}
-                                            className="btn btn-ghost px-2 py-1 text-xs"
-                                        >
-                                            ✕
+                                            ✏️
                                         </button>
                                     </div>
-                                    {nicknameError && (
-                                        <span className="text-red-400 text-xs">{nicknameError}</span>
-                                    )}
-                                </div>
-                            ) : (
-                                <>
-                                    Welcome, <span className="text-primary-400">{user?.username}</span>
-                                    <button
-                                        onClick={startEditingNickname}
-                                        className="text-slate-500 hover:text-primary-400 transition-colors"
-                                        title="Change nickname"
-                                    >
-                                        ✏️
-                                    </button>
-                                </>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex gap-3">
+                            {user?.role === 'ADMIN' && (
+                                <Button
+                                    onClick={() => router.push('/admin')}
+                                    variant="secondary"
+                                    size="sm"
+                                >
+                                    ⚙️ Admin
+                                </Button>
                             )}
+                            <Button onClick={logout} variant="ghost" size="sm">
+                                Logout
+                            </Button>
                         </div>
-                    </div>
-                    <div className="flex gap-3">
-                        {user?.role === 'ADMIN' && (
-                            <a href="/admin" className="btn btn-secondary px-4 py-2 text-sm">
-                                Admin Panel
-                            </a>
-                        )}
-                        <button onClick={logout} className="btn btn-ghost px-4 py-2 text-sm">
-                            Logout
-                        </button>
-                    </div>
-                </header>
+                    </motion.header>
 
-                {/* Content */}
-                <div className="max-w-4xl mx-auto space-y-6">
-                    {/* Create Room Button */}
-                    <div className="glass rounded-xl p-6">
-                        <h2 className="text-lg font-semibold text-white mb-4">Create a New Game</h2>
-                        <button
-                            onClick={() => setShowCreateModal(true)}
-                            className="btn btn-primary px-6 py-3 w-full sm:w-auto"
-                        >
-                            + Create Room
-                        </button>
-                    </div>
-
-                    {/* Join Room */}
-                    <div className="glass rounded-xl p-6">
-                        <h2 className="text-lg font-semibold text-white mb-4">Join a Game</h2>
-                        {error && (
-                            <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-red-400 text-sm mb-4">
-                                {error}
-                            </div>
-                        )}
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <input
-                                type="text"
-                                placeholder="Enter room code (e.g., ABC123)"
-                                value={joinCode}
-                                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                                onKeyDown={(e) => e.key === 'Enter' && handleJoinByCode()}
-                                className="input-base flex-1 uppercase tracking-widest text-center sm:text-left"
-                                maxLength={6}
-                            />
-                            <button
-                                onClick={handleJoinByCode}
-                                disabled={joining || !joinCode.trim()}
-                                className="btn btn-secondary px-6 py-3"
+                    {/* Content Grid */}
+                    <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Left Column - Actions */}
+                        <div className="space-y-6">
+                            {/* Create Room Card */}
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.1 }}
                             >
-                                {joining ? 'Joining...' : 'Join Room'}
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Your Rooms */}
-                    <div className="glass rounded-xl p-6">
-                        <h2 className="text-lg font-semibold text-white mb-4">Your Active Rooms</h2>
-                        {loading ? (
-                            <div className="py-4 text-center">
-                                <div className="animate-spin h-8 w-8 border-4 border-primary-500 border-t-transparent rounded-full mx-auto" />
-                            </div>
-                        ) : rooms.length === 0 ? (
-                            <p className="text-slate-400 text-sm">
-                                No active rooms yet. Create one to start playing!
-                            </p>
-                        ) : (
-                            <div className="space-y-3">
-                                {rooms.map((room) => (
-                                    <div
-                                        key={room.id}
-                                        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 rounded-lg bg-dream-surface/50 border border-dream-border hover:border-primary-500/30 transition-colors"
-                                    >
-                                        <div>
-                                            <h3 className="font-medium text-white">{room.name}</h3>
+                                <Card variant="elevated" hover className="cursor-pointer group" onClick={() => setShowCreateModal(true)}>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-2xl shadow-lg group-hover:scale-110 transition-transform">
+                                            ✨
+                                        </div>
+                                        <div className="flex-1">
+                                            <h2 className="text-lg font-semibold text-white group-hover:text-primary-300 transition-colors">
+                                                Create New Game
+                                            </h2>
                                             <p className="text-sm text-slate-400">
-                                                Code: <span className="text-primary-400 font-mono">{room.code}</span>
-                                                {' • '}
-                                                Host: {room.hostName}
-                                                {' • '}
-                                                {room.playerCount}/{room.maxPlayers} players
+                                                Start a room and invite friends
                                             </p>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className={`text-xs px-2 py-1 rounded ${room.status === 'WAITING'
-                                                ? 'bg-green-500/20 text-green-400'
-                                                : 'bg-yellow-500/20 text-yellow-400'
-                                                }`}>
-                                                {room.status === 'WAITING' ? 'Waiting' : 'In Game'}
-                                            </span>
-                                            <button
-                                                onClick={() => router.push(`/room/${room.code}`)}
-                                                className="btn btn-primary px-4 py-2 text-sm"
-                                            >
-                                                {room.status === 'WAITING' ? 'Enter' : 'Rejoin'}
-                                            </button>
-                                            {room.hostId === user?.id && (
-                                                <button
-                                                    onClick={() => handleCloseRoom(room.code)}
-                                                    className="btn btn-ghost px-3 py-2 text-sm text-red-400 hover:bg-red-500/20"
-                                                    title="Close Room"
-                                                >
-                                                    ✕
-                                                </button>
-                                            )}
+                                        <span className="text-2xl text-slate-600 group-hover:text-primary-400 transition-colors">→</span>
+                                    </div>
+                                </Card>
+                            </motion.div>
+
+                            {/* Join Room */}
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                <Card variant="default">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="w-10 h-10 rounded-lg bg-secondary-500/20 flex items-center justify-center text-xl">
+                                            🎯
+                                        </div>
+                                        <h2 className="text-lg font-semibold text-white">Join a Game</h2>
+                                    </div>
+
+                                    {error && (
+                                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2 text-red-400 text-sm mb-4">
+                                            {error}
+                                        </div>
+                                    )}
+
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        <input
+                                            type="text"
+                                            placeholder="Enter room code"
+                                            value={joinCode}
+                                            onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleJoinByCode()}
+                                            className="input-base flex-1 uppercase tracking-[0.3em] text-center font-mono text-lg"
+                                            maxLength={6}
+                                        />
+                                        <Button
+                                            onClick={handleJoinByCode}
+                                            loading={joining}
+                                            disabled={!joinCode.trim()}
+                                            variant="secondary"
+                                        >
+                                            Join
+                                        </Button>
+                                    </div>
+                                </Card>
+                            </motion.div>
+                        </div>
+
+                        {/* Right Column - Rooms List */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.3 }}
+                        >
+                            <Card variant="default" padding="none" className="overflow-hidden">
+                                <div className="p-6 border-b border-dream-border">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-accent-gold/20 flex items-center justify-center text-xl">
+                                            🏠
+                                        </div>
+                                        <div>
+                                            <h2 className="text-lg font-semibold text-white">Your Rooms</h2>
+                                            <p className="text-xs text-slate-500">{rooms.length} active</p>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        )}
+                                </div>
+
+                                <div className="max-h-[400px] overflow-y-auto">
+                                    {loading ? (
+                                        <div className="py-12 text-center">
+                                            <div className="w-10 h-10 spinner mx-auto" />
+                                        </div>
+                                    ) : rooms.length === 0 ? (
+                                        <div className="py-12 text-center px-6">
+                                            <div className="text-4xl mb-3 opacity-50">🌙</div>
+                                            <p className="text-slate-400 text-sm">
+                                                No active rooms yet
+                                            </p>
+                                            <p className="text-slate-500 text-xs mt-1">
+                                                Create one to start playing!
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="divide-y divide-dream-border">
+                                            {rooms.map((room) => (
+                                                <motion.div
+                                                    key={room.id}
+                                                    className="p-4 hover:bg-white/[0.02] transition-colors"
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                >
+                                                    <div className="flex justify-between items-start gap-3">
+                                                        <div className="min-w-0 flex-1">
+                                                            <h3 className="font-medium text-white truncate">{room.name}</h3>
+                                                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                                <span className="text-primary-400 font-mono text-sm tracking-wider">
+                                                                    {room.code}
+                                                                </span>
+                                                                <span className="text-slate-600">•</span>
+                                                                <span className="text-slate-400 text-sm">
+                                                                    {room.playerCount}/{room.maxPlayers}
+                                                                </span>
+                                                                <span className={`badge ${room.status === 'WAITING' ? 'badge-success' : 'badge-warning'}`}>
+                                                                    {room.status === 'WAITING' ? 'Waiting' : 'Playing'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                                            <Button
+                                                                onClick={() => router.push(`/room/${room.code}`)}
+                                                                variant="primary"
+                                                                size="sm"
+                                                            >
+                                                                {room.status === 'WAITING' ? 'Enter' : 'Rejoin'}
+                                                            </Button>
+                                                            {room.hostId === user?.id && (
+                                                                <Button
+                                                                    onClick={() => handleCloseRoom(room.code)}
+                                                                    variant="danger"
+                                                                    size="sm"
+                                                                >
+                                                                    ✕
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </Card>
+                        </motion.div>
                     </div>
                 </div>
 
                 {/* Create Room Modal */}
-                {showCreateModal && (
-                    <CreateRoomModal
-                        onClose={() => setShowCreateModal(false)}
-                        onCreated={(room) => {
-                            setShowCreateModal(false);
-                            router.push(`/room/${room.code}`);
-                        }}
-                    />
-                )}
+                <AnimatePresence>
+                    {showCreateModal && (
+                        <CreateRoomModal
+                            onClose={() => setShowCreateModal(false)}
+                            onCreated={(room) => {
+                                setShowCreateModal(false);
+                                router.push(`/room/${room.code}`);
+                            }}
+                        />
+                    )}
+                </AnimatePresence>
             </main>
         </ProtectedRoute>
     );
@@ -360,88 +438,103 @@ function CreateRoomModal({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-            <div className="glass rounded-xl p-6 w-full max-w-md animate-scale-in">
-                <h2 className="text-xl font-bold text-white mb-4">Create New Room</h2>
+        <motion.div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+        >
+            <motion.div
+                className="glass rounded-2xl p-6 w-full max-w-md shadow-glow-lg"
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-xl shadow-lg">
+                        ✨
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-white">Create Room</h2>
+                        <p className="text-sm text-slate-400">Set up your game</p>
+                    </div>
+                </div>
 
-                <form onSubmit={handleCreate} className="space-y-4">
+                <form onSubmit={handleCreate} className="space-y-5">
                     {error && (
                         <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-red-400 text-sm">
                             {error}
                         </div>
                     )}
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">
-                            Room Name
-                        </label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="input-base"
-                            placeholder="Enter room name"
-                            required
-                            minLength={2}
-                            maxLength={30}
-                        />
-                    </div>
+                    <Input
+                        label="Room Name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Epic Game Night"
+                        required
+                        maxLength={30}
+                    />
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">
-                            Max Players: {maxPlayers}
+                        <label className="block text-sm font-medium text-slate-300 mb-3">
+                            Max Players: <span className="text-primary-400 font-bold">{maxPlayers}</span>
                         </label>
-                        <input
-                            type="range"
-                            min={3}
-                            max={8}
-                            value={maxPlayers}
-                            onChange={(e) => setMaxPlayers(parseInt(e.target.value))}
-                            className="w-full accent-primary-500"
-                        />
-                        <div className="flex justify-between text-xs text-slate-500 mt-1">
-                            <span>3</span>
-                            <span>8</span>
+                        <div className="flex items-center gap-3">
+                            <span className="text-sm text-slate-500">3</span>
+                            <input
+                                type="range"
+                                min={3}
+                                max={8}
+                                value={maxPlayers}
+                                onChange={(e) => setMaxPlayers(parseInt(e.target.value))}
+                                className="flex-1 accent-primary-500 h-2 rounded-full bg-dream-surface appearance-none cursor-pointer"
+                            />
+                            <span className="text-sm text-slate-500">8</span>
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">
-                            Points to Win: {pointsToWin}
+                        <label className="block text-sm font-medium text-slate-300 mb-3">
+                            Points to Win: <span className="text-primary-400 font-bold">{pointsToWin}</span>
                         </label>
-                        <input
-                            type="range"
-                            min={10}
-                            max={50}
-                            step={5}
-                            value={pointsToWin}
-                            onChange={(e) => setPointsToWin(parseInt(e.target.value))}
-                            className="w-full accent-primary-500"
-                        />
-                        <div className="flex justify-between text-xs text-slate-500 mt-1">
-                            <span>10</span>
-                            <span>50</span>
+                        <div className="flex items-center gap-3">
+                            <span className="text-sm text-slate-500">10</span>
+                            <input
+                                type="range"
+                                min={10}
+                                max={50}
+                                step={5}
+                                value={pointsToWin}
+                                onChange={(e) => setPointsToWin(parseInt(e.target.value))}
+                                className="flex-1 accent-primary-500 h-2 rounded-full bg-dream-surface appearance-none cursor-pointer"
+                            />
+                            <span className="text-sm text-slate-500">50</span>
                         </div>
                     </div>
 
                     <div className="flex gap-3 pt-2">
-                        <button
+                        <Button
                             type="button"
                             onClick={onClose}
-                            className="btn btn-secondary flex-1 py-3"
+                            variant="secondary"
+                            className="flex-1"
                         >
                             Cancel
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
-                            disabled={creating}
-                            className="btn btn-primary flex-1 py-3"
+                            loading={creating}
+                            variant="primary"
+                            className="flex-1"
                         >
-                            {creating ? 'Creating...' : 'Create Room'}
-                        </button>
+                            Create Room
+                        </Button>
                     </div>
                 </form>
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 }

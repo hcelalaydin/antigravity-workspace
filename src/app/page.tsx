@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUserStore } from '@/stores/userStore';
+import { AnimatedBackground, Card, Button, Input } from '@/components/ui';
+import { motion } from 'framer-motion';
 
 // Cookie helpers
 const getCookie = (name: string): string | null => {
@@ -27,7 +29,6 @@ export default function Home() {
     const [error, setError] = useState('');
     const [checking, setChecking] = useState(true);
 
-    // Check if already authenticated on mount
     useEffect(() => {
         const init = async () => {
             await checkAuth();
@@ -35,14 +36,12 @@ export default function Home() {
         };
         init();
 
-        // Load saved nickname from cookie
         const savedNickname = getCookie('player_nickname');
         if (savedNickname) {
             setUsername(savedNickname);
         }
     }, [checkAuth]);
 
-    // Redirect to lobby if already authenticated
     useEffect(() => {
         if (!checking && isAuthenticated) {
             router.push('/lobby');
@@ -66,7 +65,6 @@ export default function Home() {
             const data = await res.json();
 
             if (data.success) {
-                // Save nickname to cookie for 7 days
                 setCookie('player_nickname', data.user.username, 7);
                 setUser(data.user);
                 router.push('/lobby');
@@ -80,112 +78,140 @@ export default function Home() {
         }
     };
 
-    // Show loading while checking auth
     if (checking) {
         return (
             <main className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin h-10 w-10 border-4 border-primary-500 border-t-transparent rounded-full" />
+                <AnimatedBackground />
+                <div className="relative z-10">
+                    <div className="w-12 h-12 spinner" />
+                </div>
             </main>
         );
     }
 
     return (
-        <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8 sm:p-8">
-            {/* Background glow effect */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary-600/20 rounded-full blur-3xl" />
-                <div className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary-800/20 rounded-full blur-3xl" />
-            </div>
+        <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8 sm:p-8 relative overflow-hidden">
+            <AnimatedBackground />
 
             {/* Content */}
             <div className="relative z-10 text-center w-full max-w-2xl mx-auto">
                 {/* Logo/Title */}
-                <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-primary-300 via-primary-400 to-secondary-400 bg-clip-text text-transparent leading-tight">
-                    DreamWeaver
-                </h1>
+                <motion.div
+                    initial={{ opacity: 0, y: -30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, ease: 'easeOut' }}
+                >
+                    <h1 className="text-5xl sm:text-6xl md:text-8xl font-bold mb-4 gradient-text-animated leading-tight font-display">
+                        DreamWeaver
+                    </h1>
+                    <p className="text-lg sm:text-xl text-slate-400 mb-10 sm:mb-14 font-display tracking-wide">
+                        Where imagination meets deception
+                    </p>
+                </motion.div>
 
-                <p className="text-base sm:text-xl text-slate-400 mb-8 sm:mb-12 clue-text px-4">
-                    Where imagination meets deception
-                </p>
-
-                {/* Cards decoration */}
-                <div className="flex justify-center gap-2 sm:gap-4 mb-8 sm:mb-12">
+                {/* Floating Cards */}
+                <motion.div
+                    className="flex justify-center gap-3 sm:gap-5 mb-10 sm:mb-14"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.6 }}
+                >
                     {[...Array(5)].map((_, i) => (
-                        <div
+                        <motion.div
                             key={i}
-                            className={`w-10 h-14 sm:w-16 sm:h-24 md:w-20 md:h-28 rounded-lg bg-gradient-to-br from-primary-600/30 to-primary-900/30 border border-primary-500/20 shadow-lg ${i === 0 || i === 4 ? 'hidden sm:block' : ''}`}
+                            className={`
+                                w-12 h-16 sm:w-16 sm:h-24 md:w-20 md:h-28 
+                                rounded-xl overflow-hidden
+                                ${i === 0 || i === 4 ? 'hidden sm:block' : ''}
+                            `}
                             style={{
-                                transform: `rotate(${(i - 2) * 8}deg)`,
-                                animation: `float 3s ease-in-out ${i * 0.2}s infinite`,
+                                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(45, 212, 191, 0.1) 100%)',
+                                border: '1px solid rgba(139, 92, 246, 0.3)',
+                                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
                             }}
-                        />
+                            initial={{ y: 0, rotate: (i - 2) * 8 }}
+                            animate={{
+                                y: [0, -8, 0],
+                                rotate: (i - 2) * 8,
+                            }}
+                            transition={{
+                                y: {
+                                    duration: 2 + i * 0.3,
+                                    repeat: Infinity,
+                                    ease: 'easeInOut',
+                                },
+                            }}
+                        >
+                            <div className="w-full h-full bg-gradient-to-br from-primary-500/20 to-transparent" />
+                        </motion.div>
                     ))}
-                </div>
+                </motion.div>
 
                 {/* Quick Play Form */}
-                <form onSubmit={handleQuickPlay} className="flex flex-col gap-4 px-4 sm:px-0 max-w-sm mx-auto">
-                    <div className="relative">
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            placeholder="Enter your name..."
-                            maxLength={20}
-                            className="input-base text-center text-lg py-4"
-                            disabled={loading}
-                        />
-                    </div>
+                <motion.form
+                    onSubmit={handleQuickPlay}
+                    className="flex flex-col gap-5 px-4 sm:px-0 max-w-sm mx-auto"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                >
+                    <Input
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Enter your nickname..."
+                        maxLength={20}
+                        className="text-center text-lg py-4"
+                        disabled={loading}
+                        error={error}
+                    />
 
-                    {error && (
-                        <p className="text-red-400 text-sm">{error}</p>
-                    )}
-
-                    <button
+                    <Button
                         type="submit"
-                        disabled={!username.trim() || loading}
-                        className="btn btn-primary px-6 py-4 text-lg w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                        variant="primary"
+                        size="lg"
+                        loading={loading}
+                        disabled={!username.trim()}
+                        className="w-full glow-pulse"
                     >
-                        {loading ? (
-                            <span className="flex items-center justify-center gap-2">
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                Joining...
-                            </span>
-                        ) : (
-                            '🎴 Play Now'
-                        )}
-                    </button>
-                </form>
+                        🎴 Play Now
+                    </Button>
+                </motion.form>
 
-                <p className="text-slate-500 text-xs mt-4">
+                <motion.p
+                    className="text-slate-500 text-xs mt-5"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.7 }}
+                >
                     <Link href="/login" className="hover:text-primary-400 transition-colors">
                         Admin login →
                     </Link>
-                </p>
+                </motion.p>
 
                 {/* Features */}
-                <div className="mt-10 sm:mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 px-2 sm:px-0">
-                    <div className="glass rounded-xl p-4 sm:p-6">
-                        <div className="text-2xl sm:text-3xl mb-2 sm:mb-3">🎴</div>
-                        <h3 className="font-semibold text-white mb-1 sm:mb-2 text-sm sm:text-base">Abstract Cards</h3>
-                        <p className="text-xs sm:text-sm text-slate-400">
-                            Beautiful, dreamlike images spark your imagination
-                        </p>
-                    </div>
-                    <div className="glass rounded-xl p-4 sm:p-6">
-                        <div className="text-2xl sm:text-3xl mb-2 sm:mb-3">🎭</div>
-                        <h3 className="font-semibold text-white mb-1 sm:mb-2 text-sm sm:text-base">Creative Clues</h3>
-                        <p className="text-xs sm:text-sm text-slate-400">
-                            Craft clues that are neither too obvious nor too obscure
-                        </p>
-                    </div>
-                    <div className="glass rounded-xl p-4 sm:p-6">
-                        <div className="text-2xl sm:text-3xl mb-2 sm:mb-3">👥</div>
-                        <h3 className="font-semibold text-white mb-1 sm:mb-2 text-sm sm:text-base">3-8 Players</h3>
-                        <p className="text-xs sm:text-sm text-slate-400">
-                            Gather friends for an unforgettable game night
-                        </p>
-                    </div>
-                </div>
+                <motion.div
+                    className="mt-14 sm:mt-20 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 px-2 sm:px-0"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8, duration: 0.6 }}
+                >
+                    {[
+                        { icon: '🎴', title: 'Abstract Cards', desc: 'Beautiful, dreamlike images spark your imagination' },
+                        { icon: '🎭', title: 'Creative Clues', desc: 'Craft clues that are neither too obvious nor too obscure' },
+                        { icon: '👥', title: '3-8 Players', desc: 'Gather friends for an unforgettable game night' },
+                    ].map((feature, i) => (
+                        <Card
+                            key={i}
+                            hover
+                            className="text-center"
+                        >
+                            <div className="text-3xl sm:text-4xl mb-3">{feature.icon}</div>
+                            <h3 className="font-semibold text-white mb-2 text-sm sm:text-base">{feature.title}</h3>
+                            <p className="text-xs sm:text-sm text-slate-400">{feature.desc}</p>
+                        </Card>
+                    ))}
+                </motion.div>
             </div>
         </main>
     );
