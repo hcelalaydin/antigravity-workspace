@@ -120,6 +120,7 @@ export async function GET(
                 imageUrl: s.card?.imageUrl?.substring(0, 50)
             })));
 
+            const crypto = require('crypto');
             submittedCards = sortedSubmissions
                 .filter(s => s.card && s.card.imageUrl) // Filter out any submissions without valid card data
                 .map((s) => {
@@ -137,6 +138,11 @@ export async function GET(
                         submitterId: s.playerId,
                         votes: cardVotes,
                     };
+                })
+                .sort((a, b) => {
+                    const hashA = crypto.createHash('md5').update(a.id + currentRound.id).digest('hex');
+                    const hashB = crypto.createHash('md5').update(b.id + currentRound.id).digest('hex');
+                    return hashA.localeCompare(hashB);
                 });
 
             console.log(`[GET Game] Returning ${submittedCards.length} cards to client`);
@@ -237,7 +243,7 @@ export async function GET(
                         storytellerPlayerId: currentRound.storytellerPlayerId,
                         phase: currentRound.phase,
                         clue: currentRound.clue,
-                        storytellerCardId: currentRound.storytellerCardId,
+                        storytellerCardId: currentRound.phase === 'RESULTS' ? currentRound.storytellerCardId : undefined,
                     }
                     : null,
                 myHand: handCards,

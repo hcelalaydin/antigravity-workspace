@@ -54,19 +54,29 @@ export async function POST(
         // Get all active cards
         const cards = await prisma.card.findMany({
             where: { isActive: true },
-            select: { id: true },
+            select: { id: true, imageUrl: true },
         });
 
+        // Deduplicate cards by imageUrl so no visual duplicates exist in the same game
+        const uniqueCards = [];
+        const seenUrls = new Set();
+        for (const card of cards) {
+            if (!seenUrls.has(card.imageUrl)) {
+                seenUrls.add(card.imageUrl);
+                uniqueCards.push(card);
+            }
+        }
+
         const totalCardsNeeded = room.players.length * room.cardsPerPlayer + 20; // Extra buffer
-        if (cards.length < totalCardsNeeded) {
+        if (uniqueCards.length < totalCardsNeeded) {
             return NextResponse.json(
-                { success: false, error: `Not enough cards. Need ${totalCardsNeeded}, have ${cards.length}` },
+                { success: false, error: `Not enough unique cards. Need ${totalCardsNeeded}, have ${uniqueCards.length}` },
                 { status: 400 }
             );
         }
 
         // Shuffle and distribute cards
-        const shuffledCardIds = shuffleArray(cards.map((c) => c.id));
+        const shuffledCardIds = shuffleArray(uniqueCards.map((c) => c.id));
         const playerIds = room.players.map((p) => p.id);
 
         // Deal cards to players

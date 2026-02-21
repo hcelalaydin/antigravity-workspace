@@ -726,8 +726,6 @@ function VotingPhase({
                         <motion.div
                             key={card.id}
                             variants={cardVariants}
-                            whileHover={canVote ? "hover" : undefined}
-                            whileTap={canVote ? "tap" : undefined}
                             onClick={() => canVote && setSelectedVoteId(card.id)}
                             className={`relative aspect-[2/3] rounded-xl overflow-hidden transition-all duration-300
                                 ${canVote ? 'cursor-pointer' : ''} 
@@ -906,8 +904,6 @@ function HandDisplay({
                         <motion.div
                             key={card.id}
                             variants={cardVariants}
-                            whileHover="hover"
-                            whileTap="tap"
                             onClick={() => onSelect(selectedCard === card.id ? null : card.id)}
                             className={`relative flex-shrink-0 w-28 sm:w-36 aspect-[2/3] rounded-xl overflow-hidden cursor-pointer snap-center
                 ${selectedCard === card.id ? 'ring-4 ring-primary-500 shadow-glow-lg' : ''}

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useUserStore } from '@/stores/userStore';
 import { AnimatedBackground, Card, Button, Input } from '@/components/ui';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 // Cookie helpers
 const getCookie = (name: string): string | null => {
@@ -28,6 +29,7 @@ export default function Home() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [checking, setChecking] = useState(true);
+    const [randomCards, setRandomCards] = useState<string[]>([]);
 
     useEffect(() => {
         const init = async () => {
@@ -35,6 +37,19 @@ export default function Home() {
             setChecking(false);
         };
         init();
+
+        const fetchRandomCards = async () => {
+            try {
+                const res = await fetch('/api/cards/random');
+                const data = await res.json();
+                if (data.success && data.cards) {
+                    setRandomCards(data.cards);
+                }
+            } catch (e) {
+                console.error('Failed to load random cards', e);
+            }
+        };
+        fetchRandomCards();
 
         const savedNickname = getCookie('player_nickname');
         if (savedNickname) {
@@ -142,7 +157,11 @@ export default function Home() {
                                 },
                             }}
                         >
-                            <div className="w-full h-full bg-gradient-to-br from-primary-500/20 to-transparent" />
+                            {randomCards[i] ? (
+                                <Image src={randomCards[i]} alt="Random Card" fill className="object-cover" />
+                            ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-primary-500/20 to-transparent" />
+                            )}
                         </motion.div>
                     ))}
                 </motion.div>
